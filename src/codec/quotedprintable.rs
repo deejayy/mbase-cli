@@ -104,9 +104,7 @@ impl Codec for QuotedPrintable {
                         pos += 2;
                     }
                     _ => {
-                        return Err(MbaseError::invalid_input(
-                            "incomplete escape sequence",
-                        ));
+                        return Err(MbaseError::invalid_input("incomplete escape sequence"));
                     }
                 }
             } else if c == '\r' || c == '\n' {

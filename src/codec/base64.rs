@@ -1,13 +1,12 @@
 use base64::prelude::*;
 use base64::Engine;
 
-use super::Codec;
 use super::util;
+use super::Codec;
 use crate::error::{MbaseError, Result};
 use crate::types::{CaseSensitivity, CodecMeta, DetectCandidate, Mode, PaddingRule};
 
-const STANDARD_ALPHABET: &str =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const STANDARD_ALPHABET: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 const URL_ALPHABET: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
 fn validate_padding(input: &str, padding_rule: PaddingRule) -> Result<()> {
@@ -15,30 +14,18 @@ fn validate_padding(input: &str, padding_rule: PaddingRule) -> Result<()> {
     let has_padding = pad_count > 0;
 
     match padding_rule {
-        PaddingRule::Required if !has_padding && input.len() % 4 != 0 => {
-            Err(MbaseError::invalid_padding("padding required"))
-        }
-        PaddingRule::None if has_padding => {
-            Err(MbaseError::invalid_padding("padding not allowed"))
-        }
+        PaddingRule::Required if !has_padding && !input.len().is_multiple_of(4) => Err(MbaseError::invalid_padding("padding required")),
+        PaddingRule::None if has_padding => Err(MbaseError::invalid_padding("padding not allowed")),
         _ => {
             if pad_count > 2 {
-                return Err(MbaseError::invalid_padding(
-                    "too many padding characters",
-                ));
+                return Err(MbaseError::invalid_padding("too many padding characters"));
             }
             Ok(())
         }
     }
 }
 
-fn detect_base64_common(
-    input: &str,
-    codec_name: &str,
-    alphabet: &str,
-    multibase_code: char,
-    expects_padding: bool,
-) -> DetectCandidate {
+fn detect_base64_common(input: &str, codec_name: &str, alphabet: &str, multibase_code: char, expects_padding: bool) -> DetectCandidate {
     let mut confidence: f64 = 0.0;
     let mut reasons = Vec::new();
     let mut warnings = Vec::new();
@@ -57,10 +44,7 @@ fn detect_base64_common(
         reasons.push(format!("multibase prefix '{}' detected", multibase_code));
     }
 
-    let valid_chars = input
-        .chars()
-        .filter(|c| alphabet.contains(*c) || *c == '=')
-        .count();
+    let valid_chars = input.chars().filter(|c| alphabet.contains(*c) || *c == '=').count();
     let total_chars = input.len();
     let char_ratio = valid_chars as f64 / total_chars as f64;
 
@@ -69,10 +53,7 @@ fn detect_base64_common(
         reasons.push("all characters valid".to_string());
     } else if char_ratio >= 0.9 {
         confidence = confidence.max(0.4);
-        warnings.push(format!(
-            "{:.1}% invalid characters",
-            (1.0 - char_ratio) * 100.0
-        ));
+        warnings.push(format!("{:.1}% invalid characters", (1.0 - char_ratio) * 100.0));
     } else {
         confidence = 0.0;
         warnings.push("too many invalid characters".to_string());
@@ -334,10 +315,7 @@ mod tests {
 
     #[test]
     fn test_base64_decode_hello() {
-        assert_eq!(
-            Base64.decode("SGVsbG8", Mode::Strict).unwrap(),
-            b"Hello".to_vec()
-        );
+        assert_eq!(Base64.decode("SGVsbG8", Mode::Strict).unwrap(), b"Hello".to_vec());
     }
 
     #[test]
@@ -357,10 +335,7 @@ mod tests {
 
     #[test]
     fn test_base64pad_decode() {
-        assert_eq!(
-            Base64Pad.decode("SGVsbG8=", Mode::Strict).unwrap(),
-            b"Hello".to_vec()
-        );
+        assert_eq!(Base64Pad.decode("SGVsbG8=", Mode::Strict).unwrap(), b"Hello".to_vec());
     }
 
     #[test]
@@ -376,18 +351,12 @@ mod tests {
     fn test_lenient_whitespace() {
         let input = "SGVs\nbG8=";
         assert!(Base64Pad.decode(input, Mode::Strict).is_err());
-        assert_eq!(
-            Base64Pad.decode(input, Mode::Lenient).unwrap(),
-            b"Hello".to_vec()
-        );
+        assert_eq!(Base64Pad.decode(input, Mode::Lenient).unwrap(), b"Hello".to_vec());
     }
 
     #[test]
     fn test_lenient_missing_padding() {
-        assert_eq!(
-            Base64Pad.decode("SGVsbG8", Mode::Lenient).unwrap(),
-            b"Hello".to_vec()
-        );
+        assert_eq!(Base64Pad.decode("SGVsbG8", Mode::Lenient).unwrap(), b"Hello".to_vec());
     }
 
     #[test]

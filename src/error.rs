@@ -79,16 +79,11 @@ impl MbaseError {
 
     // Helper constructors for common error patterns
     pub fn invalid_input(message: impl Into<String>) -> Self {
-        Self::InvalidInput {
-            message: message.into(),
-        }
+        Self::InvalidInput { message: message.into() }
     }
 
     pub fn invalid_char(ch: char, pos: usize) -> Self {
-        Self::InvalidCharacter {
-            char: ch,
-            position: pos,
-        }
+        Self::InvalidCharacter { char: ch, position: pos }
     }
 
     pub fn invalid_length(expected: LengthConstraint, actual: usize) -> Self {
@@ -108,15 +103,11 @@ impl MbaseError {
     }
 
     pub fn invalid_padding(message: impl Into<String>) -> Self {
-        Self::InvalidPadding {
-            message: message.into(),
-        }
+        Self::InvalidPadding { message: message.into() }
     }
 
     pub fn unsupported_codec(name: impl Into<String>) -> Self {
-        Self::UnsupportedCodec {
-            name: name.into(),
-        }
+        Self::UnsupportedCodec { name: name.into() }
     }
 }
 

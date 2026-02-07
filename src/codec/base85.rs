@@ -29,8 +29,8 @@ fn encode_ascii85(input: &[u8]) -> String {
                 chars[i] = (v % 85) as u8;
                 v /= 85;
             }
-            for i in 0..output_len {
-                result.push((chars[i] + 33) as char);
+            for item in chars.iter().take(output_len) {
+                result.push((item + 33) as char);
             }
         }
     }
@@ -65,7 +65,7 @@ fn decode_ascii85(input: &str, mode: Mode) -> Result<Vec<u8>> {
             continue;
         }
 
-        if c < '!' || c > 'u' {
+        if !('!'..='u').contains(&c) {
             return Err(MbaseError::InvalidCharacter { char: c, position: pos });
         }
 
@@ -84,16 +84,9 @@ fn decode_ascii85(input: &str, mode: Mode) -> Result<Vec<u8>> {
 
     if !chars.is_empty() {
         let pad_count = 5 - chars.len();
-        for _ in 0..pad_count {
-            chars.push(84);
-        }
+        chars.extend(std::iter::repeat_n(84, pad_count));
         let val = chars.iter().fold(0u32, |acc, &v| acc * 85 + v as u32);
-        let bytes = [
-            (val >> 24) as u8,
-            (val >> 16) as u8,
-            (val >> 8) as u8,
-            val as u8,
-        ];
+        let bytes = [(val >> 24) as u8, (val >> 16) as u8, (val >> 8) as u8, val as u8];
         result.extend_from_slice(&bytes[..4 - pad_count]);
     }
 
@@ -101,21 +94,15 @@ fn decode_ascii85(input: &str, mode: Mode) -> Result<Vec<u8>> {
 }
 
 fn encode_z85(input: &[u8]) -> Result<String> {
-    if input.len() % 4 != 0 {
-        return Err(MbaseError::invalid_length(
-            crate::error::LengthConstraint::MultipleOf(4),
-            input.len()
-        ));
+    if !input.len().is_multiple_of(4) {
+        return Err(MbaseError::invalid_length(crate::error::LengthConstraint::MultipleOf(4), input.len()));
     }
 
     let alphabet = Z85_ALPHABET.as_bytes();
     let mut result = String::new();
 
     for chunk in input.chunks(4) {
-        let val = ((chunk[0] as u32) << 24)
-            | ((chunk[1] as u32) << 16)
-            | ((chunk[2] as u32) << 8)
-            | (chunk[3] as u32);
+        let val = ((chunk[0] as u32) << 24) | ((chunk[1] as u32) << 16) | ((chunk[2] as u32) << 8) | (chunk[3] as u32);
 
         let mut chars = [0u8; 5];
         let mut v = val;
@@ -138,11 +125,8 @@ fn decode_z85(input: &str, mode: Mode) -> Result<Vec<u8>> {
         return Ok(Vec::new());
     }
 
-    if cleaned.len() % 5 != 0 {
-        return Err(MbaseError::invalid_length(
-            crate::error::LengthConstraint::MultipleOf(5),
-            cleaned.len()
-        ));
+    if !cleaned.len().is_multiple_of(5) {
+        return Err(MbaseError::invalid_length(crate::error::LengthConstraint::MultipleOf(5), cleaned.len()));
     }
 
     let mut result = Vec::new();
@@ -187,7 +171,7 @@ fn detect_ascii85(input: &str) -> DetectCandidate {
         reasons.push("has <~ ~> wrapper".to_string());
     }
 
-    let valid = input.chars().filter(|&c| (c >= '!' && c <= 'u') || c == 'z').count();
+    let valid = input.chars().filter(|&c| ('!'..='u').contains(&c) || c == 'z').count();
     let ratio = valid as f64 / input.len() as f64;
 
     if ratio > 0.9 {
@@ -219,7 +203,7 @@ fn detect_z85(input: &str) -> DetectCandidate {
     let valid = input.chars().filter(|c| Z85_ALPHABET.contains(*c)).count();
     let ratio = valid as f64 / input.len() as f64;
 
-    if ratio == 1.0 && input.len() % 5 == 0 {
+    if ratio == 1.0 && input.len().is_multiple_of(5) {
         confidence = util::confidence::PARTIAL_MATCH;
         reasons.push("all chars valid z85, length multiple of 5".to_string());
     } else if ratio > 0.9 {

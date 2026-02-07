@@ -18,9 +18,9 @@ pub use info::run_info;
 pub use list::run_list;
 pub use verify::run_verify;
 
+use crate::io::{write_output, OutputConfig};
 use mbase::error::Result;
 use mbase::types::{Context, InputSource, Mode, OutputDest};
-use crate::io::{write_output, OutputConfig};
 
 pub trait CommandHandler {
     fn execute(&self, ctx: &Context) -> Result<()>;
@@ -40,7 +40,7 @@ impl CommandHandler for EncCommand {
             run_encode_all(ctx, &self.input)?;
             return Ok(());
         }
-        
+
         let encoded = run_encode(ctx, &self.codec, &self.input, self.multibase)?;
         let config = OutputConfig {
             dest: self.output.clone(),
@@ -70,7 +70,7 @@ impl CommandHandler for DecCommand {
             run_decode_all(ctx, &self.input, self.mode)?;
             return Ok(());
         }
-        
+
         let decoded = run_decode(ctx, &self.codec, &self.input, self.mode, self.multibase)?;
         let config = OutputConfig {
             dest: self.output.clone(),
@@ -114,7 +114,7 @@ impl CommandHandler for ListCommand {
         if self.json {
             println!("{}", serde_json::to_string_pretty(&codecs).unwrap());
         } else {
-            println!("{:<16} {:<8} {}", "NAME", "PREFIX", "DESCRIPTION");
+            println!("{:<16} {:<8} DESCRIPTION", "NAME", "PREFIX");
             println!("{}", "-".repeat(60));
             for c in codecs {
                 let prefix = c.multibase_code.map_or("-".to_string(), |c| c.to_string());
@@ -139,10 +139,7 @@ impl CommandHandler for InfoCommand {
             println!("Name:        {}", meta.name);
             println!("Aliases:     {}", meta.aliases.join(", "));
             println!("Alphabet:    {}", meta.alphabet);
-            println!(
-                "Multibase:   {}",
-                meta.multibase_code.map_or("-".to_string(), |c| c.to_string())
-            );
+            println!("Multibase:   {}", meta.multibase_code.map_or("-".to_string(), |c| c.to_string()));
             println!("Padding:     {:?}", meta.padding);
             println!("Case:        {:?}", meta.case_sensitivity);
             println!("Description: {}", meta.description);
@@ -167,9 +164,7 @@ impl CommandHandler for VerifyCommand {
             println!("valid");
         } else {
             println!("invalid: {}", result.error.as_deref().unwrap_or_default());
-            return Err(mbase::error::MbaseError::invalid_input(
-                result.error.unwrap_or_default(),
-            ));
+            return Err(mbase::error::MbaseError::invalid_input(result.error.unwrap_or_default()));
         }
         Ok(())
     }
@@ -214,7 +209,7 @@ pub struct DetectCommand {
 impl CommandHandler for DetectCommand {
     fn execute(&self, ctx: &Context) -> Result<()> {
         let result = run_detect(ctx, self.input.clone(), self.top)?;
-        
+
         if self.json {
             println!("{}", serde_json::to_string_pretty(&result).unwrap());
         } else {
@@ -249,7 +244,7 @@ pub struct ExplainCommand {
 impl CommandHandler for ExplainCommand {
     fn execute(&self, ctx: &Context) -> Result<()> {
         let result = run_explain(ctx, self.input.clone(), &self.codec, self.mode)?;
-        
+
         if self.json {
             println!("{}", serde_json::to_string_pretty(&result).unwrap());
         } else {

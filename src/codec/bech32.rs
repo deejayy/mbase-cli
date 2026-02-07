@@ -1,7 +1,7 @@
 use bech32::{Bech32 as Bech32Variant, Bech32m as Bech32mVariant, Hrp};
 
-use super::Codec;
 use super::util;
+use super::Codec;
 use crate::error::{MbaseError, Result};
 use crate::types::{CaseSensitivity, CodecMeta, DetectCandidate, Mode, PaddingRule};
 
@@ -9,10 +9,8 @@ const BECH32_ALPHABET: &str = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
 const DEFAULT_HRP: &str = "data";
 
 fn encode_bech32<V: bech32::Checksum>(hrp_str: &str, data: &[u8]) -> Result<String> {
-    let hrp = Hrp::parse(hrp_str)
-        .map_err(|e| MbaseError::invalid_input(format!("invalid HRP: {}", e)))?;
-    bech32::encode::<V>(hrp, data)
-        .map_err(|e| MbaseError::invalid_input(format!("encoding failed: {}", e)))
+    let hrp = Hrp::parse(hrp_str).map_err(|e| MbaseError::invalid_input(format!("invalid HRP: {}", e)))?;
+    bech32::encode::<V>(hrp, data).map_err(|e| MbaseError::invalid_input(format!("encoding failed: {}", e)))
 }
 
 fn decode_bech32_any(input: &str, mode: Mode) -> Result<(String, Vec<u8>, bool)> {
@@ -30,12 +28,11 @@ fn decode_bech32_any(input: &str, mode: Mode) -> Result<(String, Vec<u8>, bool)>
     }
 }
 
-fn decode_bech32_strict<V: bech32::Checksum>(input: &str, mode: Mode, is_m: bool) -> Result<Vec<u8>> {
+fn decode_bech32_strict(input: &str, mode: Mode, is_m: bool) -> Result<Vec<u8>> {
     let cleaned = util::clean_for_mode(input, mode);
     let cleaned_lower = cleaned.to_lowercase();
 
-    let (hrp, data) = bech32::decode(&cleaned_lower)
-        .map_err(|_| MbaseError::ChecksumMismatch)?;
+    let (hrp, data) = bech32::decode(&cleaned_lower).map_err(|_| MbaseError::ChecksumMismatch)?;
 
     let reencoded = if is_m {
         bech32::encode::<Bech32mVariant>(hrp, &data)
@@ -69,7 +66,10 @@ fn detect_bech32(input: &str, codec_name: &str, is_m: bool) -> DetectCandidate {
             reasons.push("contains bech32 separator '1'".to_string());
 
             let data_part = &input[sep_pos + 1..];
-            let valid = data_part.chars().filter(|c| BECH32_ALPHABET.contains(c.to_ascii_lowercase())).count();
+            let valid = data_part
+                .chars()
+                .filter(|c| BECH32_ALPHABET.contains(c.to_ascii_lowercase()))
+                .count();
             if valid == data_part.len() {
                 confidence = util::confidence::ALPHABET_MATCH;
                 reasons.push("valid bech32 charset".to_string());
@@ -112,7 +112,7 @@ impl Codec for Bech32Codec {
     }
 
     fn decode(&self, input: &str, mode: Mode) -> Result<Vec<u8>> {
-        decode_bech32_strict::<Bech32Variant>(input, mode, false)
+        decode_bech32_strict(input, mode, false)
     }
 
     fn detect_score(&self, input: &str) -> DetectCandidate {
@@ -140,7 +140,7 @@ impl Codec for Bech32mCodec {
     }
 
     fn decode(&self, input: &str, mode: Mode) -> Result<Vec<u8>> {
-        decode_bech32_strict::<Bech32mVariant>(input, mode, true)
+        decode_bech32_strict(input, mode, true)
     }
 
     fn detect_score(&self, input: &str) -> DetectCandidate {

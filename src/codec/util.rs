@@ -76,7 +76,9 @@ mod tests {
 
     #[test]
     fn test_validate_alphabet_with_padding() {
-        assert!(validate_alphabet_with_padding("SGVsbG8=", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", true).is_ok());
+        assert!(
+            validate_alphabet_with_padding("SGVsbG8=", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", true).is_ok()
+        );
     }
 
     #[test]

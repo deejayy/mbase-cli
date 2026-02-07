@@ -37,14 +37,11 @@ fn print_hex_preview(data: &[u8]) {
     const BYTES_PER_LINE: usize = 16;
     const MAX_LINES: usize = 32;
 
-    let total_lines = (data.len() + BYTES_PER_LINE - 1) / BYTES_PER_LINE;
+    let total_lines = data.len().div_ceil(BYTES_PER_LINE);
     let truncated = total_lines > MAX_LINES;
     let lines_to_show = total_lines.min(MAX_LINES);
 
-    eprintln!(
-        "Binary output ({} bytes). Showing hex preview (use --force to output raw or --out @file):\n",
-        data.len()
-    );
+    eprintln!("Binary output ({} bytes). Showing hex preview (use --force to output raw or --out @file):\n", data.len());
 
     for line_idx in 0..lines_to_show {
         let offset = line_idx * BYTES_PER_LINE;

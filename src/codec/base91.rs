@@ -85,10 +85,7 @@ impl Codec for Base91 {
         for (pos, c) in input.chars().enumerate() {
             let d = table[c as usize];
             if d == -1 {
-                return Err(MbaseError::InvalidCharacter {
-                    char: c,
-                    position: pos,
-                });
+                return Err(MbaseError::InvalidCharacter { char: c, position: pos });
             }
 
             if val == -1 {
@@ -138,14 +135,18 @@ impl Codec for Base91 {
         }
 
         let has_special = clean.chars().any(|c| "!#$%&()*+,./:;<=>?@[]^_`{|}~\"".contains(c));
-        let confidence = if has_special { util::confidence::ALPHABET_MATCH } else { util::confidence::PARTIAL_MATCH };
+        let confidence = if has_special {
+            util::confidence::ALPHABET_MATCH
+        } else {
+            util::confidence::PARTIAL_MATCH
+        };
 
         let mut reasons = vec!["all characters valid".to_string()];
         if has_special {
             reasons.push("contains base91-specific punctuation".to_string());
         }
 
-        if let Ok(_) = self.decode(&clean, Mode::Lenient) {
+        if self.decode(&clean, Mode::Lenient).is_ok() {
             reasons.push("decodes successfully".to_string());
         }
 

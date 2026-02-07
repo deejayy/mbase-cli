@@ -58,13 +58,7 @@ fn run(cli: Cli) -> error::Result<()> {
             all,
         }),
 
-        Command::Conv {
-            from,
-            to,
-            r#in,
-            out,
-            mode,
-        } => Box::new(commands::ConvCommand {
+        Command::Conv { from, to, r#in, out, mode } => Box::new(commands::ConvCommand {
             from,
             to,
             input: types::InputSource::parse(&r#in),
@@ -76,12 +70,7 @@ fn run(cli: Cli) -> error::Result<()> {
 
         Command::Info { codec, json } => Box::new(commands::InfoCommand { codec, json }),
 
-        Command::Verify {
-            codec,
-            r#in,
-            mode,
-            json,
-        } => Box::new(commands::VerifyCommand {
+        Command::Verify { codec, r#in, mode, json } => Box::new(commands::VerifyCommand {
             codec,
             input: types::InputSource::parse(&r#in),
             mode: mode.into(),
@@ -112,12 +101,7 @@ fn run(cli: Cli) -> error::Result<()> {
             top,
         }),
 
-        Command::Explain {
-            codec,
-            r#in,
-            mode,
-            json,
-        } => Box::new(commands::ExplainCommand {
+        Command::Explain { codec, r#in, mode, json } => Box::new(commands::ExplainCommand {
             codec,
             input: types::InputSource::parse(&r#in),
             mode: mode.into(),

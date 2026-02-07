@@ -19,40 +19,44 @@ pub struct Proquint;
 
 impl Proquint {
     fn encode_u16(val: u16) -> String {
-        let mut result = Vec::with_capacity(5);
-        result.push(CONSONANTS[((val >> 12) & 0x0F) as usize]);
-        result.push(VOWELS[((val >> 10) & 0x03) as usize]);
-        result.push(CONSONANTS[((val >> 6) & 0x0F) as usize]);
-        result.push(VOWELS[((val >> 4) & 0x03) as usize]);
-        result.push(CONSONANTS[(val & 0x0F) as usize]);
+        let result = vec![
+            CONSONANTS[((val >> 12) & 0x0F) as usize],
+            VOWELS[((val >> 10) & 0x03) as usize],
+            CONSONANTS[((val >> 6) & 0x0F) as usize],
+            VOWELS[((val >> 4) & 0x03) as usize],
+            CONSONANTS[(val & 0x0F) as usize],
+        ];
         String::from_utf8(result).unwrap()
     }
 
     fn decode_quint(s: &str) -> Result<u16> {
         let chars: Vec<char> = s.chars().collect();
         if chars.len() != 5 {
-            return Err(MbaseError::invalid_length(
-                crate::error::LengthConstraint::Exact(5),
-                chars.len()
-            ));
+            return Err(MbaseError::invalid_length(crate::error::LengthConstraint::Exact(5), chars.len()));
         }
 
-        let c0 = consonant_index(chars[0])
-            .ok_or_else(|| MbaseError::InvalidCharacter { char: chars[0], position: 0 })?;
-        let v0 = vowel_index(chars[1])
-            .ok_or_else(|| MbaseError::InvalidCharacter { char: chars[1], position: 1 })?;
-        let c1 = consonant_index(chars[2])
-            .ok_or_else(|| MbaseError::InvalidCharacter { char: chars[2], position: 2 })?;
-        let v1 = vowel_index(chars[3])
-            .ok_or_else(|| MbaseError::InvalidCharacter { char: chars[3], position: 3 })?;
-        let c2 = consonant_index(chars[4])
-            .ok_or_else(|| MbaseError::InvalidCharacter { char: chars[4], position: 4 })?;
+        let c0 = consonant_index(chars[0]).ok_or_else(|| MbaseError::InvalidCharacter {
+            char: chars[0],
+            position: 0,
+        })?;
+        let v0 = vowel_index(chars[1]).ok_or_else(|| MbaseError::InvalidCharacter {
+            char: chars[1],
+            position: 1,
+        })?;
+        let c1 = consonant_index(chars[2]).ok_or_else(|| MbaseError::InvalidCharacter {
+            char: chars[2],
+            position: 2,
+        })?;
+        let v1 = vowel_index(chars[3]).ok_or_else(|| MbaseError::InvalidCharacter {
+            char: chars[3],
+            position: 3,
+        })?;
+        let c2 = consonant_index(chars[4]).ok_or_else(|| MbaseError::InvalidCharacter {
+            char: chars[4],
+            position: 4,
+        })?;
 
-        Ok(((c0 as u16) << 12)
-            | ((v0 as u16) << 10)
-            | ((c1 as u16) << 6)
-            | ((v1 as u16) << 4)
-            | (c2 as u16))
+        Ok(((c0 as u16) << 12) | ((v0 as u16) << 10) | ((c1 as u16) << 6) | ((v1 as u16) << 4) | (c2 as u16))
     }
 }
 
@@ -74,11 +78,8 @@ impl Codec for Proquint {
             return Ok(String::new());
         }
 
-        if input.len() % 2 != 0 {
-            return Err(MbaseError::invalid_length(
-                crate::error::LengthConstraint::MultipleOf(2),
-                input.len()
-            ));
+        if !input.len().is_multiple_of(2) {
+            return Err(MbaseError::invalid_length(crate::error::LengthConstraint::MultipleOf(2), input.len()));
         }
 
         let quints: Vec<String> = input
@@ -180,10 +181,7 @@ impl Codec for Proquint {
         DetectCandidate {
             codec: self.name().to_string(),
             confidence,
-            reasons: vec![
-                format!("{} valid quints", valid_quints),
-                "CVCVC pattern matches".to_string(),
-            ],
+            reasons: vec![format!("{} valid quints", valid_quints), "CVCVC pattern matches".to_string()],
             warnings: vec![],
         }
     }
@@ -206,7 +204,7 @@ mod tests {
         // 127.0.0.1 = 0x7F000001
         assert_eq!(codec.encode(&[0x7F, 0x00, 0x00, 0x01]).unwrap(), "lusab-babad");
         assert_eq!(codec.decode("lusab-babad", Mode::Strict).unwrap(), &[0x7F, 0x00, 0x00, 0x01]);
-        
+
         // 63.84.220.193 = 0x3F54DCC1
         assert_eq!(codec.encode(&[0x3F, 0x54, 0xDC, 0xC1]).unwrap(), "gutih-tugad");
         assert_eq!(codec.decode("gutih-tugad", Mode::Strict).unwrap(), &[0x3F, 0x54, 0xDC, 0xC1]);
@@ -258,7 +256,7 @@ mod tests {
         let codec = Proquint;
         let score = codec.detect_score("lusab-babad");
         assert!(score.confidence >= 0.7);
-        
+
         let score = codec.detect_score("hello");
         assert!(score.confidence < 0.5);
     }

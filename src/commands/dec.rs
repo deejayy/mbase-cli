@@ -1,14 +1,8 @@
-use mbase::error::Result;
 use crate::io::read_input;
+use mbase::error::Result;
 use mbase::types::{Context, InputSource, Mode};
 
-pub fn run_decode(
-    ctx: &Context,
-    codec_name: &str,
-    input: &InputSource,
-    mode: Mode,
-    multibase: bool,
-) -> Result<Vec<u8>> {
+pub fn run_decode(ctx: &Context, codec_name: &str, input: &InputSource, mode: Mode, multibase: bool) -> Result<Vec<u8>> {
     let data = read_input(input)?;
     let text = String::from_utf8_lossy(&data);
 
@@ -30,19 +24,16 @@ pub fn run_decode_all(ctx: &Context, input: &InputSource, mode: Mode) -> Result<
     let data = read_input(input)?;
     let text = String::from_utf8_lossy(&data);
 
-    println!("{:<18} {}", "CODEC", "DECODED (as text, or hex if binary)");
+    println!("{:<18} DECODED (as text, or hex if binary)", "CODEC");
     println!("{}", "-".repeat(70));
 
     let mut successes = 0;
     for meta in ctx.registry.list() {
         let codec = ctx.registry.get(meta.name)?;
-        match codec.decode(&text, mode) {
-            Ok(decoded) => {
-                successes += 1;
-                let display = format_decoded(&decoded);
-                println!("{:<18} {}", meta.name, display);
-            }
-            Err(_) => {}
+        if let Ok(decoded) = codec.decode(&text, mode) {
+            successes += 1;
+            let display = format_decoded(&decoded);
+            println!("{:<18} {}", meta.name, display);
         }
     }
 
@@ -58,9 +49,9 @@ fn format_decoded(data: &[u8]) -> String {
         return "(empty)".to_string();
     }
 
-    let is_printable = data.iter().all(|&b| {
-        b == b'\n' || b == b'\r' || b == b'\t' || (b >= 0x20 && b < 0x7F)
-    });
+    let is_printable = data
+        .iter()
+        .all(|&b| b == b'\n' || b == b'\r' || b == b'\t' || (0x20..0x7F).contains(&b));
 
     if is_printable {
         let s = String::from_utf8_lossy(data);

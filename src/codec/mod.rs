@@ -12,9 +12,9 @@ mod base91;
 mod bech32;
 mod proquint;
 mod quotedprintable;
-mod uuencode;
 pub mod registry;
 pub(crate) mod util;
+mod uuencode;
 
 pub use registry::Registry;
 

@@ -1,7 +1,7 @@
 use sha2::{Digest, Sha256};
 
-use super::Codec;
 use super::util;
+use super::Codec;
 use crate::error::{MbaseError, Result};
 use crate::types::{CaseSensitivity, CodecMeta, DetectCandidate, Mode, PaddingRule};
 
@@ -41,7 +41,7 @@ fn detect_base58(input: &str, codec_name: &str, multibase_code: Option<char>, al
 
 fn double_sha256(data: &[u8]) -> [u8; 32] {
     let first = Sha256::digest(data);
-    Sha256::digest(&first).into()
+    Sha256::digest(first).into()
 }
 
 pub struct Base58Btc;
@@ -73,9 +73,10 @@ impl Codec for Base58Btc {
             .with_alphabet(bs58::Alphabet::BITCOIN)
             .into_vec()
             .map_err(|e| match e {
-                bs58::decode::Error::InvalidCharacter { character, index } => {
-                    MbaseError::InvalidCharacter { char: character, position: index }
-                }
+                bs58::decode::Error::InvalidCharacter { character, index } => MbaseError::InvalidCharacter {
+                    char: character,
+                    position: index,
+                },
                 _ => MbaseError::invalid_input(e.to_string()),
             })
     }
@@ -118,9 +119,10 @@ impl Codec for Base58Flickr {
             .with_alphabet(bs58::Alphabet::FLICKR)
             .into_vec()
             .map_err(|e| match e {
-                bs58::decode::Error::InvalidCharacter { character, index } => {
-                    MbaseError::InvalidCharacter { char: character, position: index }
-                }
+                bs58::decode::Error::InvalidCharacter { character, index } => MbaseError::InvalidCharacter {
+                    char: character,
+                    position: index,
+                },
                 _ => MbaseError::invalid_input(e.to_string()),
             })
     }
@@ -166,9 +168,10 @@ impl Codec for Base58Check {
             .with_alphabet(bs58::Alphabet::BITCOIN)
             .into_vec()
             .map_err(|e| match e {
-                bs58::decode::Error::InvalidCharacter { character, index } => {
-                    MbaseError::InvalidCharacter { char: character, position: index }
-                }
+                bs58::decode::Error::InvalidCharacter { character, index } => MbaseError::InvalidCharacter {
+                    char: character,
+                    position: index,
+                },
                 _ => MbaseError::invalid_input(e.to_string()),
             })?;
 
@@ -237,10 +240,7 @@ mod tests {
 
     #[test]
     fn test_base58btc_lenient_whitespace() {
-        assert_eq!(
-            Base58Btc.decode("JxF12 TrwUP 45BMd", Mode::Lenient).unwrap(),
-            b"Hello World"
-        );
+        assert_eq!(Base58Btc.decode("JxF12 TrwUP 45BMd", Mode::Lenient).unwrap(), b"Hello World");
     }
 
     #[test]
@@ -288,9 +288,9 @@ mod tests {
         let replacement = if *last == '1' { '2' } else { '1' };
         encoded.pop();
         encoded.push(replacement);
-        
+
         let result = Base58Check.decode(&encoded, Mode::Strict);
-        assert!(matches!(result, Err(MbaseError::ChecksumMismatch { .. })));
+        assert!(matches!(result, Err(MbaseError::ChecksumMismatch)));
     }
 
     #[test]

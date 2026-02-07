@@ -51,17 +51,12 @@ fn decode_base45(input: &str, mode: Mode) -> Result<Vec<u8>> {
     let vals: std::result::Result<Vec<u32>, _> = normalized
         .chars()
         .enumerate()
-        .map(|(pos, c)| {
-            char_to_val(c).ok_or(MbaseError::InvalidCharacter { char: c, position: pos })
-        })
+        .map(|(pos, c)| char_to_val(c).ok_or(MbaseError::InvalidCharacter { char: c, position: pos }))
         .collect();
     let vals = vals?;
 
     if vals.len() % 3 == 1 {
-        return Err(MbaseError::invalid_input(format!(
-            "base45 length {} invalid (cannot be 1 mod 3)",
-            vals.len()
-        )));
+        return Err(MbaseError::invalid_input(format!("base45 length {} invalid (cannot be 1 mod 3)", vals.len())));
     }
 
     let mut result = Vec::new();
@@ -104,10 +99,7 @@ fn validate_base45(input: &str, mode: Mode) -> Result<()> {
     }
 
     if cleaned.len() % 3 == 1 {
-        return Err(MbaseError::invalid_input(format!(
-            "base45 length {} invalid",
-            cleaned.len()
-        )));
+        return Err(MbaseError::invalid_input(format!("base45 length {} invalid", cleaned.len())));
     }
 
     Ok(())
@@ -127,10 +119,7 @@ fn detect_base45(input: &str) -> DetectCandidate {
         };
     }
 
-    let valid = input
-        .chars()
-        .filter(|c| ALPHABET.contains(c.to_ascii_uppercase()))
-        .count();
+    let valid = input.chars().filter(|c| ALPHABET.contains(c.to_ascii_uppercase())).count();
     let ratio = valid as f64 / input.len() as f64;
 
     if ratio == 1.0 {
@@ -250,10 +239,7 @@ mod tests {
 
     #[test]
     fn test_base45_lenient_lowercase() {
-        assert_eq!(
-            Base45.decode("bb8", Mode::Lenient).unwrap(),
-            b"AB"
-        );
+        assert_eq!(Base45.decode("bb8", Mode::Lenient).unwrap(), b"AB");
     }
 
     #[test]

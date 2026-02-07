@@ -1,7 +1,7 @@
 use serde::Serialize;
 
-use mbase::error::Result;
 use crate::io::read_input;
+use mbase::error::Result;
 use mbase::types::{Context, InputSource, Mode};
 
 #[derive(Debug, Serialize)]

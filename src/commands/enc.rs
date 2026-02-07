@@ -1,5 +1,5 @@
-use mbase::error::Result;
 use crate::io::read_input;
+use mbase::error::Result;
 use mbase::types::{Context, InputSource};
 
 pub fn run_encode(ctx: &Context, codec_name: &str, input: &InputSource, multibase: bool) -> Result<String> {
@@ -19,7 +19,7 @@ pub fn run_encode(ctx: &Context, codec_name: &str, input: &InputSource, multibas
 pub fn run_encode_all(ctx: &Context, input: &InputSource) -> Result<()> {
     let data = read_input(input)?;
 
-    println!("{:<18} {}", "CODEC", "ENCODED");
+    println!("{:<18} ENCODED", "CODEC");
     println!("{}", "-".repeat(70));
 
     for meta in ctx.registry.list() {

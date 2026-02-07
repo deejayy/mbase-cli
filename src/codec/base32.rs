@@ -1,8 +1,8 @@
 use data_encoding::{Encoding, Specification};
 use std::sync::OnceLock;
 
-use super::Codec;
 use super::util;
+use super::Codec;
 use crate::error::{MbaseError, Result};
 use crate::types::{CaseSensitivity, CodecMeta, DetectCandidate, Mode, PaddingRule};
 
@@ -67,8 +67,7 @@ fn decode_base32(
     match mode {
         Mode::Strict => {
             let e = if expects_padding { pad_enc } else { enc };
-            e.decode(cleaned.as_bytes())
-                .map_err(|e| MbaseError::invalid_input(e.to_string()))
+            e.decode(cleaned.as_bytes()).map_err(|e| MbaseError::invalid_input(e.to_string()))
         }
         Mode::Lenient => {
             let normalized = if is_lowercase {
@@ -180,59 +179,123 @@ macro_rules! impl_base32_codec {
 }
 
 impl_base32_codec!(
-    Base32Lower, "base32lower", &["base32", "b32"], RFC4648_LOWER, Some('b'),
-    CaseSensitivity::Lower, PaddingRule::None, false, true,
+    Base32Lower,
+    "base32lower",
+    &["base32", "b32"],
+    RFC4648_LOWER,
+    Some('b'),
+    CaseSensitivity::Lower,
+    PaddingRule::None,
+    false,
+    true,
     "RFC4648 Base32 lowercase without padding",
-    get_base32_lower, get_base32_pad_lower
+    get_base32_lower,
+    get_base32_pad_lower
 );
 
 impl_base32_codec!(
-    Base32Upper, "base32upper", &["B32"], RFC4648_UPPER, Some('B'),
-    CaseSensitivity::Upper, PaddingRule::None, false, false,
+    Base32Upper,
+    "base32upper",
+    &["B32"],
+    RFC4648_UPPER,
+    Some('B'),
+    CaseSensitivity::Upper,
+    PaddingRule::None,
+    false,
+    false,
     "RFC4648 Base32 uppercase without padding",
-    get_base32_upper, get_base32_pad_upper
+    get_base32_upper,
+    get_base32_pad_upper
 );
 
 impl_base32_codec!(
-    Base32PadLower, "base32padlower", &["base32pad", "b32pad"], RFC4648_LOWER, Some('c'),
-    CaseSensitivity::Lower, PaddingRule::Required, true, true,
+    Base32PadLower,
+    "base32padlower",
+    &["base32pad", "b32pad"],
+    RFC4648_LOWER,
+    Some('c'),
+    CaseSensitivity::Lower,
+    PaddingRule::Required,
+    true,
+    true,
     "RFC4648 Base32 lowercase with padding",
-    get_base32_lower, get_base32_pad_lower
+    get_base32_lower,
+    get_base32_pad_lower
 );
 
 impl_base32_codec!(
-    Base32PadUpper, "base32padupper", &["B32PAD"], RFC4648_UPPER, Some('C'),
-    CaseSensitivity::Upper, PaddingRule::Required, true, false,
+    Base32PadUpper,
+    "base32padupper",
+    &["B32PAD"],
+    RFC4648_UPPER,
+    Some('C'),
+    CaseSensitivity::Upper,
+    PaddingRule::Required,
+    true,
+    false,
     "RFC4648 Base32 uppercase with padding",
-    get_base32_upper, get_base32_pad_upper
+    get_base32_upper,
+    get_base32_pad_upper
 );
 
 impl_base32_codec!(
-    Base32HexLower, "base32hexlower", &["base32hex", "b32hex"], HEX_LOWER, Some('v'),
-    CaseSensitivity::Lower, PaddingRule::None, false, true,
+    Base32HexLower,
+    "base32hexlower",
+    &["base32hex", "b32hex"],
+    HEX_LOWER,
+    Some('v'),
+    CaseSensitivity::Lower,
+    PaddingRule::None,
+    false,
+    true,
     "RFC4648 Base32hex lowercase without padding",
-    get_base32_hex_lower, get_base32_hex_pad_lower
+    get_base32_hex_lower,
+    get_base32_hex_pad_lower
 );
 
 impl_base32_codec!(
-    Base32HexUpper, "base32hexupper", &["B32HEX"], HEX_UPPER, Some('V'),
-    CaseSensitivity::Upper, PaddingRule::None, false, false,
+    Base32HexUpper,
+    "base32hexupper",
+    &["B32HEX"],
+    HEX_UPPER,
+    Some('V'),
+    CaseSensitivity::Upper,
+    PaddingRule::None,
+    false,
+    false,
     "RFC4648 Base32hex uppercase without padding",
-    get_base32_hex_upper, get_base32_hex_pad_upper
+    get_base32_hex_upper,
+    get_base32_hex_pad_upper
 );
 
 impl_base32_codec!(
-    Base32HexPadLower, "base32hexpadlower", &["base32hexpad", "b32hexpad"], HEX_LOWER, Some('t'),
-    CaseSensitivity::Lower, PaddingRule::Required, true, true,
+    Base32HexPadLower,
+    "base32hexpadlower",
+    &["base32hexpad", "b32hexpad"],
+    HEX_LOWER,
+    Some('t'),
+    CaseSensitivity::Lower,
+    PaddingRule::Required,
+    true,
+    true,
     "RFC4648 Base32hex lowercase with padding",
-    get_base32_hex_lower, get_base32_hex_pad_lower
+    get_base32_hex_lower,
+    get_base32_hex_pad_lower
 );
 
 impl_base32_codec!(
-    Base32HexPadUpper, "base32hexpadupper", &["B32HEXPAD"], HEX_UPPER, Some('T'),
-    CaseSensitivity::Upper, PaddingRule::Required, true, false,
+    Base32HexPadUpper,
+    "base32hexpadupper",
+    &["B32HEXPAD"],
+    HEX_UPPER,
+    Some('T'),
+    CaseSensitivity::Upper,
+    PaddingRule::Required,
+    true,
+    false,
     "RFC4648 Base32hex uppercase with padding",
-    get_base32_hex_upper, get_base32_hex_pad_upper
+    get_base32_hex_upper,
+    get_base32_hex_pad_upper
 );
 
 #[cfg(test)]

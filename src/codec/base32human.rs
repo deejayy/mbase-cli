@@ -50,10 +50,7 @@ fn crockford_encode(input: &[u8]) -> String {
 fn crockford_decode(input: &str, mode: Mode) -> Result<Vec<u8>> {
     let cleaned: String = match mode {
         Mode::Strict => input.to_string(),
-        Mode::Lenient => input
-            .chars()
-            .filter(|c| !c.is_ascii_whitespace() && *c != '-')
-            .collect(),
+        Mode::Lenient => input.chars().filter(|c| !c.is_ascii_whitespace() && *c != '-').collect(),
     };
 
     if cleaned.is_empty() {
@@ -83,9 +80,7 @@ fn crockford_decode(input: &str, mode: Mode) -> Result<Vec<u8>> {
     if bits > 0 {
         let remaining_bits = buffer & ((1 << bits) - 1);
         if remaining_bits != 0 {
-            return Err(MbaseError::invalid_input(
-                "crockford32 decode: non-zero padding bits"
-            ));
+            return Err(MbaseError::invalid_input("crockford32 decode: non-zero padding bits"));
         }
     }
 
@@ -137,22 +132,14 @@ fn crockford_char_value(ch: char, mode: Mode) -> Result<Option<u8>> {
 fn validate_crockford(input: &str, mode: Mode) -> Result<()> {
     let cleaned: String = match mode {
         Mode::Strict => input.to_string(),
-        Mode::Lenient => input
-            .chars()
-            .filter(|c| !c.is_ascii_whitespace() && *c != '-')
-            .collect(),
+        Mode::Lenient => input.chars().filter(|c| !c.is_ascii_whitespace() && *c != '-').collect(),
     };
 
     for (pos, ch) in cleaned.chars().enumerate() {
         let upper = ch.to_ascii_uppercase();
         let valid = match mode {
             Mode::Strict => CROCKFORD_ALPHABET.contains(upper) && ch.is_ascii_uppercase(),
-            Mode::Lenient => {
-                CROCKFORD_ALPHABET.contains(upper)
-                    || upper == 'O'
-                    || upper == 'I'
-                    || upper == 'L'
-            }
+            Mode::Lenient => CROCKFORD_ALPHABET.contains(upper) || upper == 'O' || upper == 'I' || upper == 'L',
         };
         if !valid {
             return Err(MbaseError::InvalidCharacter { char: ch, position: pos });
@@ -225,10 +212,7 @@ impl Codec for ZBase32 {
             reasons.push("multibase prefix 'h' detected".to_string());
         }
 
-        let valid = input
-            .chars()
-            .filter(|c| ZBASE32_ALPHABET_FULL.contains(*c))
-            .count();
+        let valid = input.chars().filter(|c| ZBASE32_ALPHABET_FULL.contains(*c)).count();
         let ratio = valid as f64 / input.len() as f64;
 
         if ratio == 1.0 {
@@ -343,10 +327,7 @@ mod tests {
 
     #[test]
     fn test_crockford_decode() {
-        assert_eq!(
-            Crockford32.decode("91JPRV3F", Mode::Strict).unwrap(),
-            b"Hello"
-        );
+        assert_eq!(Crockford32.decode("91JPRV3F", Mode::Strict).unwrap(), b"Hello");
     }
 
     #[test]
@@ -359,30 +340,18 @@ mod tests {
 
     #[test]
     fn test_crockford_lenient_confusables() {
-        assert_eq!(
-            Crockford32.decode("O1JPRV3F", Mode::Lenient).unwrap(),
-            Crockford32.decode("01JPRV3F", Mode::Lenient).unwrap()
-        );
-        assert_eq!(
-            Crockford32.decode("9IJPRV3F", Mode::Lenient).unwrap(),
-            Crockford32.decode("91JPRV3F", Mode::Lenient).unwrap()
-        );
+        assert_eq!(Crockford32.decode("O1JPRV3F", Mode::Lenient).unwrap(), Crockford32.decode("01JPRV3F", Mode::Lenient).unwrap());
+        assert_eq!(Crockford32.decode("9IJPRV3F", Mode::Lenient).unwrap(), Crockford32.decode("91JPRV3F", Mode::Lenient).unwrap());
     }
 
     #[test]
     fn test_crockford_lenient_hyphens() {
-        assert_eq!(
-            Crockford32.decode("91JP-RV3F", Mode::Lenient).unwrap(),
-            b"Hello"
-        );
+        assert_eq!(Crockford32.decode("91JP-RV3F", Mode::Lenient).unwrap(), b"Hello");
     }
 
     #[test]
     fn test_crockford_lenient_lowercase() {
-        assert_eq!(
-            Crockford32.decode("91jprv3f", Mode::Lenient).unwrap(),
-            b"Hello"
-        );
+        assert_eq!(Crockford32.decode("91jprv3f", Mode::Lenient).unwrap(), b"Hello");
     }
 
     #[test]
@@ -393,10 +362,7 @@ mod tests {
     #[test]
     fn test_crockford_empty() {
         assert_eq!(Crockford32.encode(&[]).unwrap(), "");
-        assert_eq!(
-            Crockford32.decode("", Mode::Strict).unwrap(),
-            Vec::<u8>::new()
-        );
+        assert_eq!(Crockford32.decode("", Mode::Strict).unwrap(), Vec::<u8>::new());
     }
 
     #[test]
@@ -424,11 +390,11 @@ mod tests {
         // Change last char to one that would set trailing bits differently
         let last_val = crockford_char_value(chars[last_idx], Mode::Strict).unwrap().unwrap();
         let new_val = (last_val ^ 1) & 0x1f; // Flip bit 0
-        // Find corresponding char for new_val
+                                             // Find corresponding char for new_val
         let new_char = CROCKFORD_ALPHABET.chars().nth(new_val as usize).unwrap();
         chars[last_idx] = new_char;
         let modified: String = chars.into_iter().collect();
-        
+
         let result = Crockford32.decode(&modified, Mode::Strict);
         assert!(result.is_err(), "should reject invalid padding bits");
     }

@@ -1,4 +1,4 @@
-use data_encoding::{Encoding, HEXLOWER, HEXUPPER, HEXLOWER_PERMISSIVE, HEXUPPER_PERMISSIVE};
+use data_encoding::{Encoding, HEXLOWER, HEXLOWER_PERMISSIVE, HEXUPPER, HEXUPPER_PERMISSIVE};
 
 use super::{util, Codec};
 use crate::error::{MbaseError, Result};
@@ -17,10 +17,7 @@ fn decode_hex(input: &str, mode: Mode, strict_enc: &Encoding, lenient_enc: &Enco
     };
 
     if to_decode.len() % 2 != 0 {
-        return Err(MbaseError::invalid_length(
-            crate::error::LengthConstraint::MultipleOf(2),
-            to_decode.len()
-        ));
+        return Err(MbaseError::invalid_length(crate::error::LengthConstraint::MultipleOf(2), to_decode.len()));
     }
 
     let enc = match mode {
@@ -62,7 +59,7 @@ fn detect_hex(input: &str, codec_name: &str, multibase_code: char) -> DetectCand
         warnings.push(format!("{:.1}% non-hex characters", (1.0 - ratio) * 100.0));
     }
 
-    if input.len() % 2 != 0 {
+    if !input.len().is_multiple_of(2) {
         confidence *= 0.5;
         warnings.push("odd length".to_string());
     }

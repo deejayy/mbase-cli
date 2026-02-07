@@ -1,7 +1,7 @@
 use serde::Serialize;
 
-use mbase::error::Result;
 use crate::io::read_input;
+use mbase::error::Result;
 use mbase::types::{Context, DetectCandidate, InputSource, Mode};
 
 #[derive(Debug, Serialize)]
@@ -101,7 +101,7 @@ mod tests {
         let mut map = HashMap::new();
         map.insert('z', "base58btc");
         map.insert('m', "base64");
-        
+
         assert_eq!(detect_multibase_prefix("zHello", &map), Some(("base58btc", 'z')));
         assert_eq!(detect_multibase_prefix("mSGVsbG8", &map), Some(("base64", 'm')));
         assert_eq!(detect_multibase_prefix("Hello", &map), None);
@@ -110,11 +110,7 @@ mod tests {
     #[test]
     fn test_detect_base64() {
         let ctx = Context::default();
-        let result = run_detect(
-            &ctx,
-            InputSource::Literal(b"SGVsbG8gV29ybGQ".to_vec()),
-            5,
-        ).unwrap();
+        let result = run_detect(&ctx, InputSource::Literal(b"SGVsbG8gV29ybGQ".to_vec()), 5).unwrap();
         assert!(!result.candidates.is_empty());
         assert!(result.candidates.iter().any(|c| c.codec.contains("base64")));
     }
@@ -122,11 +118,7 @@ mod tests {
     #[test]
     fn test_detect_multibase_input() {
         let ctx = Context::default();
-        let result = run_detect(
-            &ctx,
-            InputSource::Literal(b"zJxF12TrwUP45BMd".to_vec()),
-            5,
-        ).unwrap();
+        let result = run_detect(&ctx, InputSource::Literal(b"zJxF12TrwUP45BMd".to_vec()), 5).unwrap();
         assert!(!result.candidates.is_empty());
         assert_eq!(result.candidates[0].codec, "base58btc");
         assert!(result.candidates[0].confidence >= 0.95);
@@ -135,11 +127,7 @@ mod tests {
     #[test]
     fn test_detect_hex() {
         let ctx = Context::default();
-        let result = run_detect(
-            &ctx,
-            InputSource::Literal(b"f48656c6c6f".to_vec()),
-            5,
-        ).unwrap();
+        let result = run_detect(&ctx, InputSource::Literal(b"f48656c6c6f".to_vec()), 5).unwrap();
         assert!(!result.candidates.is_empty());
         assert_eq!(result.candidates[0].codec, "base16lower");
     }

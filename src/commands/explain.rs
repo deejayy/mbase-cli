@@ -1,7 +1,7 @@
 use serde::Serialize;
 
-use mbase::error::{MbaseError, Result};
 use crate::io::read_input;
+use mbase::error::{MbaseError, Result};
 use mbase::types::{Context, InputSource, Mode};
 
 #[derive(Debug, Serialize)]
@@ -26,7 +26,7 @@ fn get_context(input: &str, pos: usize, window: usize) -> String {
     let start = pos.saturating_sub(window);
     let end = (pos + window + 1).min(input.len());
     let slice = &input[start..end];
-    
+
     let marker_pos = pos - start;
     let mut result = String::new();
     result.push_str(slice);
@@ -50,10 +50,7 @@ fn suggest_fixes(error: &MbaseError, codec_name: &str, input: &str) -> Vec<Strin
                 suggestions.push("Try --mode lenient for case flexibility".to_string());
             }
             if *c == '=' {
-                suggestions.push(format!(
-                    "Padding character found; try a padded variant like {}pad",
-                    codec_name.trim_end_matches("pad")
-                ));
+                suggestions.push(format!("Padding character found; try a padded variant like {}pad", codec_name.trim_end_matches("pad")));
             }
         }
         MbaseError::InvalidPadding { .. } => {
@@ -113,9 +110,7 @@ pub fn run_explain(ctx: &Context, input: InputSource, codec: &str, mode: Mode) -
         },
         Err(e) => {
             let (position, offending_char, context) = match &e {
-                MbaseError::InvalidCharacter { char: c, position: p } => {
-                    (Some(*p), Some(*c), Some(get_context(trimmed, *p, 10)))
-                }
+                MbaseError::InvalidCharacter { char: c, position: p } => (Some(*p), Some(*c), Some(get_context(trimmed, *p, 10))),
                 _ => (None, None, None),
             };
 
@@ -147,12 +142,7 @@ mod tests {
     #[test]
     fn test_explain_valid() {
         let ctx = Context::default();
-        let result = run_explain(
-            &ctx,
-            InputSource::Literal(b"SGVsbG8".to_vec()),
-            "base64",
-            Mode::Strict,
-        ).unwrap();
+        let result = run_explain(&ctx, InputSource::Literal(b"SGVsbG8".to_vec()), "base64", Mode::Strict).unwrap();
         assert!(result.valid);
         assert!(result.error.is_none());
     }
@@ -160,12 +150,7 @@ mod tests {
     #[test]
     fn test_explain_invalid_char() {
         let ctx = Context::default();
-        let result = run_explain(
-            &ctx,
-            InputSource::Literal(b"SGVsbG8!".to_vec()),
-            "base64",
-            Mode::Strict,
-        ).unwrap();
+        let result = run_explain(&ctx, InputSource::Literal(b"SGVsbG8!".to_vec()), "base64", Mode::Strict).unwrap();
         assert!(!result.valid);
         assert!(result.error.is_some());
         let err = result.error.unwrap();
@@ -175,12 +160,7 @@ mod tests {
     #[test]
     fn test_explain_suggestions() {
         let ctx = Context::default();
-        let result = run_explain(
-            &ctx,
-            InputSource::Literal(b"SGVs bG8".to_vec()),
-            "base64",
-            Mode::Strict,
-        ).unwrap();
+        let result = run_explain(&ctx, InputSource::Literal(b"SGVs bG8".to_vec()), "base64", Mode::Strict).unwrap();
         assert!(!result.valid);
         assert!(!result.suggestions.is_empty());
         assert!(result.suggestions.iter().any(|s| s.contains("lenient")));

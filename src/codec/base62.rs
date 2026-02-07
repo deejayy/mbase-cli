@@ -25,14 +25,9 @@ fn encode_base62(input: &[u8]) -> String {
     });
 
     let leading_zeros = input.iter().take_while(|&&b| b == 0).count();
-    for _ in 0..leading_zeros {
-        num.push(0);
-    }
+    num.extend(std::iter::repeat_n(0, leading_zeros));
 
-    num.iter()
-        .rev()
-        .map(|&d| alphabet[d as usize] as char)
-        .collect()
+    num.iter().rev().map(|&d| alphabet[d as usize] as char).collect()
 }
 
 fn decode_base62(input: &str, mode: Mode) -> Result<Vec<u8>> {

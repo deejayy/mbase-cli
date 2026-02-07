@@ -66,11 +66,7 @@ impl Codec for Uuencode {
         let lines: Vec<&str> = input.lines().collect();
 
         for (line_num, line) in lines.iter().enumerate() {
-            let line = if mode == Mode::Lenient {
-                line.trim_end()
-            } else {
-                *line
-            };
+            let line = if mode == Mode::Lenient { line.trim_end() } else { *line };
 
             if line.is_empty() {
                 continue;
@@ -96,20 +92,14 @@ impl Codec for Uuencode {
             for quad in encoded_chars.chunks(4) {
                 if quad.len() < 4 {
                     if mode == Mode::Strict {
-                        return Err(MbaseError::invalid_input(format!(
-                            "incomplete quad at line {}",
-                            line_num + 1
-                        )));
+                        return Err(MbaseError::invalid_input(format!("incomplete quad at line {}", line_num + 1)));
                     }
                     break;
                 }
 
                 let mut vals = [0u8; 4];
                 for (i, &c) in quad.iter().enumerate() {
-                    vals[i] = decode_char(c).ok_or_else(|| MbaseError::InvalidCharacter {
-                        char: c,
-                        position: 1 + i,
-                    })?;
+                    vals[i] = decode_char(c).ok_or_else(|| MbaseError::InvalidCharacter { char: c, position: 1 + i })?;
                 }
 
                 line_data.push((vals[0] << 2) | (vals[1] >> 4));
@@ -153,7 +143,7 @@ impl Codec for Uuencode {
 
             if let Some(len) = decode_char(chars[0]) {
                 if len <= 45 {
-                    let expected_encoded = ((len as usize + 2) / 3) * 4 + 1;
+                    let expected_encoded = (len as usize).div_ceil(3) * 4 + 1;
                     if chars.len() >= expected_encoded {
                         let all_valid = chars[1..].iter().all(|&c| decode_char(c).is_some());
                         if all_valid {
@@ -174,7 +164,11 @@ impl Codec for Uuencode {
         }
 
         let ratio = valid_lines as f64 / total_lines as f64;
-        let confidence = if ratio > 0.8 { util::confidence::ALPHABET_MATCH } else { ratio * util::confidence::PARTIAL_MATCH };
+        let confidence = if ratio > 0.8 {
+            util::confidence::ALPHABET_MATCH
+        } else {
+            ratio * util::confidence::PARTIAL_MATCH
+        };
 
         DetectCandidate {
             codec: self.name().to_string(),

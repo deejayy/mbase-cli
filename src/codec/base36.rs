@@ -25,14 +25,9 @@ fn encode_base36(input: &[u8], alphabet: &[u8]) -> String {
     });
 
     let leading_zeros = input.iter().take_while(|&&b| b == 0).count();
-    for _ in 0..leading_zeros {
-        num.push(0);
-    }
+    num.extend(std::iter::repeat_n(0, leading_zeros));
 
-    num.iter()
-        .rev()
-        .map(|&d| alphabet[d as usize] as char)
-        .collect()
+    num.iter().rev().map(|&d| alphabet[d as usize] as char).collect()
 }
 
 fn decode_base36(input: &str, mode: Mode, is_lowercase: bool) -> Result<Vec<u8>> {
@@ -286,7 +281,7 @@ mod tests {
         let enc1 = Base36Lower.encode(data1).unwrap();
         let enc2 = Base36Lower.encode(data2).unwrap();
         assert_ne!(enc1, enc2, "Leading zero byte should produce different encoding");
-        
+
         let dec1 = Base36Lower.decode(&enc1, Mode::Strict).unwrap();
         let dec2 = Base36Lower.decode(&enc2, Mode::Strict).unwrap();
         assert_eq!(dec1, data1);

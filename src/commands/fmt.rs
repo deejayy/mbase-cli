@@ -1,5 +1,5 @@
-use mbase::error::Result;
 use crate::io::read_input;
+use mbase::error::Result;
 use mbase::types::{Context, InputSource, Mode};
 
 pub struct FmtOptions {
@@ -18,13 +18,7 @@ impl Default for FmtOptions {
     }
 }
 
-pub fn run_fmt(
-    ctx: &Context,
-    codec_name: &str,
-    input: &InputSource,
-    mode: Mode,
-    opts: &FmtOptions,
-) -> Result<String> {
+pub fn run_fmt(ctx: &Context, codec_name: &str, input: &InputSource, mode: Mode, opts: &FmtOptions) -> Result<String> {
     let codec = ctx.registry.get(codec_name)?;
 
     let data = read_input(input)?;
