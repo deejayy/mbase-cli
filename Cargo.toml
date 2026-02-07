@@ -1,0 +1,30 @@
+[package]
+name = "mbase"
+version = "0.1.0"
+edition = "2021"
+description = "Universal base encode/decode/convert CLI"
+license = "MIT"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+thiserror = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+is-terminal = "0.4"
+base64 = "0.22"
+data-encoding = "2"
+bs58 = { version = "0.5", features = ["check"] }
+sha2 = "0.10"
+bech32 = "0.11"
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
+
+[lib]
+name = "mbase"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mbase"
+path = "src/main.rs"
