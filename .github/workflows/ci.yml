@@ -1,0 +1,124 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches:
+    - master
+    - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test
+    env:
+      CARGO: cargo
+      TARGET_FLAGS:
+      TARGET_DIR: ./target
+      CROSS_VERSION: v0.2.5
+      RUST_BACKTRACE: 1
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - build: stable
+          os: ubuntu-latest
+          rust: stable
+        - build: beta
+          os: ubuntu-latest
+          rust: beta
+        - build: nightly
+          os: ubuntu-latest
+          rust: nightly
+        - build: stable-musl
+          os: ubuntu-latest
+          rust: stable
+          target: x86_64-unknown-linux-musl
+        - build: stable-aarch64
+          os: ubuntu-latest
+          rust: stable
+          target: aarch64-unknown-linux-gnu
+        - build: macos
+          os: macos-latest
+          rust: stable
+        - build: win-msvc
+          os: windows-latest
+          rust: stable
+        - build: win-gnu
+          os: windows-latest
+          rust: stable-x86_64-gnu
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ matrix.rust }}
+
+    - name: Use Cross
+      if: matrix.os == 'ubuntu-latest' && matrix.target != ''
+      run: |
+        dir="$RUNNER_TEMP/cross-download"
+        mkdir "$dir"
+        echo "$dir" >> $GITHUB_PATH
+        cd "$dir"
+        curl -LO "https://github.com/cross-rs/cross/releases/download/$CROSS_VERSION/cross-x86_64-unknown-linux-musl.tar.gz"
+        tar xf cross-x86_64-unknown-linux-musl.tar.gz
+        echo "CARGO=cross" >> $GITHUB_ENV
+        echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
+        echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
+
+    - name: Show command used for Cargo
+      run: |
+        echo "cargo command is: ${{ env.CARGO }}"
+        echo "target flag is: ${{ env.TARGET_FLAGS }}"
+        echo "target dir is: ${{ env.TARGET_DIR }}"
+
+    - name: Build
+      run: ${{ env.CARGO }} build --verbose --workspace ${{ env.TARGET_FLAGS }}
+
+    - name: Run tests
+      run: ${{ env.CARGO }} test --verbose --workspace ${{ env.TARGET_FLAGS }}
+
+  rustfmt:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: stable
+        components: rustfmt
+    - name: Check formatting
+      run: cargo fmt --all --check
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: stable
+        components: clippy
+    - name: Run clippy
+      run: cargo clippy --all-targets --all-features -- -D warnings
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - name: Check documentation
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: cargo doc --no-deps --document-private-items --workspace
