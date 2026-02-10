@@ -94,15 +94,18 @@ fn decode_ascii85(input: &str, mode: Mode) -> Result<Vec<u8>> {
 }
 
 fn encode_z85(input: &[u8]) -> Result<String> {
-    if !input.len().is_multiple_of(4) {
-        return Err(MbaseError::invalid_length(crate::error::LengthConstraint::MultipleOf(4), input.len()));
+    if input.is_empty() {
+        return Ok(String::new());
     }
 
     let alphabet = Z85_ALPHABET.as_bytes();
     let mut result = String::new();
 
     for chunk in input.chunks(4) {
-        let val = ((chunk[0] as u32) << 24) | ((chunk[1] as u32) << 16) | ((chunk[2] as u32) << 8) | (chunk[3] as u32);
+        let mut padded = [0u8; 4];
+        padded[..chunk.len()].copy_from_slice(chunk);
+
+        let val = ((padded[0] as u32) << 24) | ((padded[1] as u32) << 16) | ((padded[2] as u32) << 8) | (padded[3] as u32);
 
         let mut chars = [0u8; 5];
         let mut v = val;
@@ -110,7 +113,16 @@ fn encode_z85(input: &[u8]) -> Result<String> {
             chars[i] = alphabet[(v % 85) as usize];
             v /= 85;
         }
-        for &c in &chars {
+
+        let output_len = match chunk.len() {
+            1 => 2,
+            2 => 3,
+            3 => 4,
+            4 => 5,
+            _ => unreachable!(),
+        };
+
+        for &c in &chars[..output_len] {
             result.push(c as char);
         }
     }
@@ -125,29 +137,43 @@ fn decode_z85(input: &str, mode: Mode) -> Result<Vec<u8>> {
         return Ok(Vec::new());
     }
 
-    if !cleaned.len().is_multiple_of(5) {
-        return Err(MbaseError::invalid_length(crate::error::LengthConstraint::MultipleOf(5), cleaned.len()));
-    }
-
     let mut result = Vec::new();
+    let chars: Vec<char> = cleaned.chars().collect();
 
-    for (chunk_idx, chunk) in cleaned.as_bytes().chunks(5).enumerate() {
+    let mut i = 0;
+    while i < chars.len() {
+        let chunk_len = std::cmp::min(5, chars.len() - i);
+        let chunk = &chars[i..i + chunk_len];
+
         let mut val: u32 = 0;
-        for (i, &c) in chunk.iter().enumerate() {
-            let pos = chunk_idx * 5 + i;
+        for (j, &c) in chunk.iter().enumerate() {
+            let pos = i + j;
             let v = Z85_ALPHABET
                 .chars()
-                .position(|x| x as u8 == c)
-                .ok_or(MbaseError::InvalidCharacter {
-                    char: c as char,
-                    position: pos,
-                })?;
+                .position(|x| x == c)
+                .ok_or(MbaseError::InvalidCharacter { char: c, position: pos })?;
             val = val * 85 + v as u32;
         }
-        result.push((val >> 24) as u8);
-        result.push((val >> 16) as u8);
-        result.push((val >> 8) as u8);
-        result.push(val as u8);
+
+        if chunk_len < 5 {
+            for _ in chunk_len..5 {
+                val = val * 85 + 84;
+            }
+        }
+
+        let bytes = [(val >> 24) as u8, (val >> 16) as u8, (val >> 8) as u8, val as u8];
+
+        let output_len = match chunk_len {
+            5 => 4,
+            4 => 3,
+            3 => 2,
+            2 => 1,
+            1 => return Err(MbaseError::invalid_input("z85 group cannot be single character")),
+            _ => unreachable!(),
+        };
+
+        result.extend_from_slice(&bytes[..output_len]);
+        i += chunk_len;
     }
 
     Ok(result)
@@ -356,13 +382,34 @@ mod tests {
     }
 
     #[test]
-    fn test_z85_invalid_input_length() {
-        assert!(Z85.encode(&[1, 2, 3]).is_err());
+    fn test_z85_variable_length_input() {
+        let test_cases = [
+            (&[1u8][..], true),
+            (&[1, 2][..], true),
+            (&[1, 2, 3][..], true),
+            (&[1, 2, 3, 4][..], true),
+        ];
+        for (input, should_succeed) in test_cases {
+            let result = Z85.encode(input);
+            assert_eq!(result.is_ok(), should_succeed, "encode failed for len {}", input.len());
+            if let Ok(encoded) = result {
+                let decoded = Z85.decode(&encoded, Mode::Strict).unwrap();
+                assert_eq!(decoded, input, "roundtrip failed for len {}", input.len());
+            }
+        }
     }
 
     #[test]
-    fn test_z85_invalid_encoded_length() {
-        assert!(Z85.decode("Hell", Mode::Strict).is_err());
+    fn test_z85_partial_decode() {
+        let encoded_1byte = Z85.encode(&[0x42]).unwrap();
+        assert_eq!(encoded_1byte.len(), 2);
+        let decoded = Z85.decode(&encoded_1byte, Mode::Strict).unwrap();
+        assert_eq!(decoded, &[0x42]);
+
+        let encoded_3bytes = Z85.encode(&[0x42, 0x43, 0x44]).unwrap();
+        assert_eq!(encoded_3bytes.len(), 4);
+        let decoded = Z85.decode(&encoded_3bytes, Mode::Strict).unwrap();
+        assert_eq!(decoded, &[0x42, 0x43, 0x44]);
     }
 
     #[test]

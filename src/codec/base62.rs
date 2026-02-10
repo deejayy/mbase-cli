@@ -84,8 +84,8 @@ fn validate_base62(input: &str, mode: Mode) -> Result<()> {
 }
 
 fn detect_base62(input: &str) -> DetectCandidate {
-    let mut confidence: f64 = 0.0;
     let mut reasons = Vec::new();
+    let mut warnings = Vec::new();
 
     if input.is_empty() {
         return DetectCandidate {
@@ -99,16 +99,56 @@ fn detect_base62(input: &str) -> DetectCandidate {
     let valid = input.chars().filter(|c| ALPHABET.contains(*c)).count();
     let ratio = valid as f64 / input.len() as f64;
 
-    if ratio == 1.0 {
-        confidence = util::confidence::WEAK_MATCH;
+    if ratio != 1.0 {
+        return DetectCandidate {
+            codec: "base62".to_string(),
+            confidence: 0.0,
+            reasons: vec!["contains invalid characters".to_string()],
+            warnings,
+        };
+    }
+
+    let has_base64_only_chars = input.chars().any(|c| c == '+' || c == '/' || c == '=');
+    let has_mixed_case = input.chars().any(|c| c.is_ascii_lowercase()) && input.chars().any(|c| c.is_ascii_uppercase());
+    let has_digits = input.chars().any(|c| c.is_ascii_digit());
+
+    if has_base64_only_chars {
+        return DetectCandidate {
+            codec: "base62".to_string(),
+            confidence: 0.0,
+            reasons: vec!["contains base64-only characters".to_string()],
+            warnings,
+        };
+    }
+
+    let len = input.len();
+    let is_base64_len = len % 4 == 0 || (len % 4 == 2 || len % 4 == 3);
+
+    let mut confidence = if has_mixed_case && has_digits {
+        if is_base64_len {
+            reasons.push("all characters valid; mixed case with digits".to_string());
+            warnings.push("could also be base64 without +/ chars".to_string());
+            util::confidence::ALPHABET_MATCH
+        } else {
+            reasons.push("all characters valid; mixed case with digits; length not typical for base64".to_string());
+            util::confidence::ALPHABET_MATCH + 0.1
+        }
+    } else {
         reasons.push("all characters alphanumeric".to_string());
+        warnings.push("base62 has no standard format; low confidence".to_string());
+        util::confidence::WEAK_MATCH
+    };
+
+    if decode_base62(input, Mode::Lenient).is_ok() {
+        confidence = confidence.max(util::confidence::ALPHABET_MATCH);
+        reasons.push("decodes successfully".to_string());
     }
 
     DetectCandidate {
         codec: "base62".to_string(),
         confidence: confidence.min(1.0),
         reasons,
-        warnings: vec!["base62 has no standard; low confidence".to_string()],
+        warnings,
     }
 }
 
@@ -233,9 +273,16 @@ mod tests {
     }
 
     #[test]
-    fn test_base62_detect_low_confidence() {
+    fn test_base62_detect_improved() {
         let candidate = detect_base62("HelloWorld123");
-        assert!(candidate.confidence <= 0.4);
-        assert!(!candidate.warnings.is_empty());
+        assert!(candidate.confidence >= 0.7, "Mixed case with digits should have decent confidence");
+
+        let candidate2 = detect_base62("ABCDEFG");
+        assert!(candidate2.confidence <= 0.7, "All uppercase should have lower confidence");
+        assert!(!candidate2.warnings.is_empty());
+
+        let candidate3 = detect_base62("foytdbtkmVrOTjIyni8AaHd9j80YzLhycbEWQPLX4XzQhT5bJvaA");
+        assert!(candidate3.confidence >= 0.7, "Mixed case with digits (len multiple of 4) should detect");
+        assert!(!candidate3.warnings.is_empty(), "Should warn about possible base64");
     }
 }

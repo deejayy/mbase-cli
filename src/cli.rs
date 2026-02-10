@@ -29,6 +29,9 @@ pub enum Command {
 
         #[arg(long, help = "Show encoding with all codecs")]
         all: bool,
+
+        #[arg(long, help = "Output as JSON")]
+        json: bool,
     },
 
     #[command(about = "Decode text to bytes")]
@@ -53,6 +56,9 @@ pub enum Command {
 
         #[arg(long, help = "Try all codecs and show successful decodes")]
         all: bool,
+
+        #[arg(long, help = "Output as JSON")]
+        json: bool,
     },
 
     #[command(about = "Convert between encodings")]
@@ -71,6 +77,9 @@ pub enum Command {
 
         #[arg(long, default_value = "strict")]
         mode: ModeArg,
+
+        #[arg(long, help = "Output as JSON")]
+        json: bool,
     },
 
     #[command(about = "List supported codecs")]

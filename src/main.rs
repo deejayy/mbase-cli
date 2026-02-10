@@ -32,12 +32,14 @@ fn run(cli: Cli) -> error::Result<()> {
             out,
             multibase,
             all,
+            json,
         } => Box::new(commands::EncCommand {
             codec,
             input: types::InputSource::parse(&r#in),
             output: types::OutputDest::parse(&out),
             multibase,
             all,
+            json,
         }),
 
         Command::Dec {
@@ -48,6 +50,7 @@ fn run(cli: Cli) -> error::Result<()> {
             force,
             multibase,
             all,
+            json,
         } => Box::new(commands::DecCommand {
             codec,
             input: types::InputSource::parse(&r#in),
@@ -56,14 +59,23 @@ fn run(cli: Cli) -> error::Result<()> {
             force,
             multibase,
             all,
+            json,
         }),
 
-        Command::Conv { from, to, r#in, out, mode } => Box::new(commands::ConvCommand {
+        Command::Conv {
+            from,
+            to,
+            r#in,
+            out,
+            mode,
+            json,
+        } => Box::new(commands::ConvCommand {
             from,
             to,
             input: types::InputSource::parse(&r#in),
             output: types::OutputDest::parse(&out),
             mode: mode.into(),
+            json,
         }),
 
         Command::List { json } => Box::new(commands::ListCommand { json }),

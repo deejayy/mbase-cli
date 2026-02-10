@@ -8,10 +8,10 @@ mod info;
 mod list;
 mod verify;
 
-pub use conv::run_conv;
-pub use dec::{run_decode, run_decode_all};
+pub use conv::{run_conv, run_conv_json};
+pub use dec::{run_decode, run_decode_all, run_decode_all_json, run_decode_json};
 pub use detect::run_detect;
-pub use enc::{run_encode, run_encode_all};
+pub use enc::{run_encode, run_encode_all, run_encode_all_json, run_encode_json};
 pub use explain::run_explain;
 pub use fmt::{run_fmt, FmtOptions};
 pub use info::run_info;
@@ -32,12 +32,32 @@ pub struct EncCommand {
     pub output: OutputDest,
     pub multibase: bool,
     pub all: bool,
+    pub json: bool,
 }
 
 impl CommandHandler for EncCommand {
     fn execute(&self, ctx: &Context) -> Result<()> {
+        if self.json {
+            if self.all {
+                let result = run_encode_all_json(ctx, &self.input)?;
+                println!("{}", serde_json::to_string_pretty(&result).unwrap());
+            } else {
+                let result = run_encode_json(ctx, &self.codec, &self.input, self.multibase)?;
+                println!("{}", serde_json::to_string_pretty(&result).unwrap());
+            }
+            return Ok(());
+        }
+
         if self.all {
-            run_encode_all(ctx, &self.input)?;
+            let output_str = run_encode_all(ctx, &self.input)?;
+            let config = OutputConfig {
+                dest: self.output.clone(),
+                force: true,
+            };
+            write_output(output_str.as_bytes(), &config)?;
+            if matches!(self.output, OutputDest::Stdout) {
+                println!();
+            }
             return Ok(());
         }
 
@@ -62,10 +82,22 @@ pub struct DecCommand {
     pub force: bool,
     pub multibase: bool,
     pub all: bool,
+    pub json: bool,
 }
 
 impl CommandHandler for DecCommand {
     fn execute(&self, ctx: &Context) -> Result<()> {
+        if self.json {
+            if self.all {
+                let result = run_decode_all_json(ctx, &self.input, self.mode)?;
+                println!("{}", serde_json::to_string_pretty(&result).unwrap());
+            } else {
+                let result = run_decode_json(ctx, &self.codec, &self.input, self.mode, self.multibase)?;
+                println!("{}", serde_json::to_string_pretty(&result).unwrap());
+            }
+            return Ok(());
+        }
+
         if self.all {
             run_decode_all(ctx, &self.input, self.mode)?;
             return Ok(());
@@ -87,10 +119,17 @@ pub struct ConvCommand {
     pub input: InputSource,
     pub output: OutputDest,
     pub mode: Mode,
+    pub json: bool,
 }
 
 impl CommandHandler for ConvCommand {
     fn execute(&self, ctx: &Context) -> Result<()> {
+        if self.json {
+            let result = run_conv_json(ctx, &self.from, &self.to, &self.input, self.mode)?;
+            println!("{}", serde_json::to_string_pretty(&result).unwrap());
+            return Ok(());
+        }
+
         let converted = run_conv(ctx, &self.from, &self.to, &self.input, self.mode)?;
         let config = OutputConfig {
             dest: self.output.clone(),
@@ -114,11 +153,11 @@ impl CommandHandler for ListCommand {
         if self.json {
             println!("{}", serde_json::to_string_pretty(&codecs).unwrap());
         } else {
-            println!("{:<16} {:<8} DESCRIPTION", "NAME", "PREFIX");
+            println!("{:<20} {:<8} DESCRIPTION", "NAME", "PREFIX");
             println!("{}", "-".repeat(60));
             for c in codecs {
                 let prefix = c.multibase_code.map_or("-".to_string(), |c| c.to_string());
-                println!("{:<16} {:<8} {}", c.name, prefix, c.description);
+                println!("{:<20} {:<8} {}", c.name, prefix, c.description);
             }
         }
         Ok(())

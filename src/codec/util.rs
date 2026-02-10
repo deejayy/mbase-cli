@@ -6,6 +6,28 @@ pub mod confidence {
     pub const ALPHABET_MATCH: f64 = 0.70;
     pub const PARTIAL_MATCH: f64 = 0.50;
     pub const WEAK_MATCH: f64 = 0.30;
+
+    use crate::types::DetectCandidate;
+
+    #[allow(dead_code)]
+    pub fn no_match(codec: &str) -> DetectCandidate {
+        DetectCandidate {
+            codec: codec.to_string(),
+            confidence: 0.0,
+            reasons: vec![],
+            warnings: vec![],
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn with_confidence(codec: &str, confidence: f64, reason: String) -> DetectCandidate {
+        DetectCandidate {
+            codec: codec.to_string(),
+            confidence,
+            reasons: vec![reason],
+            warnings: vec![],
+        }
+    }
 }
 
 pub fn clean_for_mode(input: &str, mode: Mode) -> String {
